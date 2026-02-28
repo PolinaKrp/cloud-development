@@ -1,13 +1,13 @@
+using Aspire.Hosting;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
-var cache = builder.AddRedis("RedisCache").WithRedisInsight(containerName: "insight");
+var cache = builder.AddRedis("RedisCache");
 
-var service = builder.AddProject<Projects.AspireApp_ApiService>("service-api")
-    .WithReference(cache)
-    .WaitFor(cache);
+var service = builder.AddProject("service-api", "../AspireApp.ApiService/AspireApp.ApiService.csproj")
+    .WithReference(cache);
 
-builder.AddProject<Projects.Client_Wasm>("client-wasm")
-    .WithReference(service)
-    .WaitFor(service);
+builder.AddProject("client-wasm", "../Client.Wasm/Client.Wasm.csproj")
+    .WithReference(service);
 
 builder.Build().Run();

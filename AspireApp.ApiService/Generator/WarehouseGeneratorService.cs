@@ -1,25 +1,17 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using AspireApp.ApiService.Properties.Entities;
+using AspireApp.ApiService.Entities;
 
-namespace AspireApp.ApiService.Properties.Generator;
+namespace AspireApp.ApiService.Generator;
 
 /// <summary>
 /// Служба для запуска юзкейса по обработке товаров на складе
 /// </summary>
 public class WarehouseGeneratorService(
     IWarehouseCache warehouseCache,
-    IConfiguration configuration,
     ILogger<WarehouseGeneratorService> logger,
     WarehouseGenerator generator) : IWarehouseGeneratorService
 {
-    /// <summary>
-    /// Время инвалидации кэша 
-    /// </summary>
-    private readonly TimeSpan _cacheExpiration = int.TryParse(configuration["CacheExpiration"], out var seconds)
-        ? TimeSpan.FromSeconds(seconds)
-        : TimeSpan.FromSeconds(3600);
-
     public async Task<Warehouse> ProcessWarehouse(int id)
     {
         logger.LogInformation("Обработка товара с Id = {Id} начата", id);
@@ -49,7 +41,7 @@ public class WarehouseGeneratorService(
         try
         {
             logger.LogInformation("Сохранение товара {Id} в кэш", id);
-            await warehouseCache.SetAsync(warehouse, _cacheExpiration);
+            await warehouseCache.SetAsync(warehouse);
         }
         catch (Exception ex)
         {

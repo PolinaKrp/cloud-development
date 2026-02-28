@@ -1,4 +1,4 @@
-using AspireApp.ApiService.Properties.Generator; 
+using AspireApp.ApiService.Generator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -10,7 +10,7 @@ builder.AddServiceDefaults();
 builder.AddRedisDistributedCache("RedisCache");
 
 builder.Services.AddScoped<IWarehouseCache, WarehouseCache>();
-builder.Services.AddScoped<WarehouseGenerator>();
+builder.Services.AddSingleton<WarehouseGenerator>(); 
 builder.Services.AddScoped<IWarehouseGeneratorService, WarehouseGeneratorService>();
 
 builder.Services.AddCors(options =>

@@ -1,7 +1,6 @@
-﻿using System;
-namespace AspireApp.ApiService.Properties.Entities;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
+namespace AspireApp.ApiService.Entities;
 
 /// <summary>
 /// Товар на складе
@@ -45,7 +44,7 @@ public class Warehouse
     public double Weight { get; set; }
 
     /// <summary>
-    /// Габариты единицы товара (формат: ДхШхВ см)
+    /// Габариты единицы товара 
     /// </summary>
     [JsonPropertyName("dimensions")]
     public string? Dimensions { get; set; }
