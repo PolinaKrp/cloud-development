@@ -1,5 +1,3 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using AspireApp.ApiService.Entities;
 
 namespace AspireApp.ApiService.Generator;

@@ -28,8 +28,5 @@ public class WarehouseGenerator
     /// <summary>
     /// Генерирует один случайный товар (Id будет перезаписан вызывающим кодом)
     /// </summary>
-    public Warehouse Generate()
-    {
-        return _faker.Generate();
-    }
+    public Warehouse Generate() => _faker.Generate();
 }
