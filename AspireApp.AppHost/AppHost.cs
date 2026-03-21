@@ -2,30 +2,24 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var cache = builder.AddRedis("RedisCache").WithRedisInsight(containerName: "insight");
 
-var api0 = builder.AddProject<Projects.AspireApp_ApiService>("warehouse-api-0")
-    .WithReference(cache)
-    .WithEnvironment("REPLICA_ID", "0")
-    .WaitFor(cache);
+var ports = new[] { 5001, 5002, 5003 };
 
-var api1 = builder.AddProject<Projects.AspireApp_ApiService>("warehouse-api-1")
-    .WithReference(cache)
-    .WithEnvironment("REPLICA_ID", "1")
-    .WaitFor(cache);
-
-var api2 = builder.AddProject<Projects.AspireApp_ApiService>("warehouse-api-2")
-    .WithReference(cache)
-    .WithEnvironment("REPLICA_ID", "2")
-    .WaitFor(cache);
+for (var i = 0; i < 3; i++)
+{
+    var api = builder.AddProject<Projects.AspireApp_ApiService>($"warehouse-api-{i}")
+        .WithReference(cache)
+        .WithEnvironment("REPLICA_ID", i.ToString())
+        .WithHttpEndpoint(port: ports[i], name: $"api-{i}")
+        .WaitFor(cache);
+}
 
 var gateway = builder.AddProject("api-gateway", "../AspireApp.ApiGateway/AspireApp.ApiGateway.csproj")
-    .WithReference(api0)
-    .WithReference(api1)
-    .WithReference(api2)
-    .WaitFor(api0).WaitFor(api1).WaitFor(api2);
+    .WithHttpEndpoint(port: 5101, name: "gateway");
 
 builder.AddProject("client-wasm", "../Client.Wasm/Client.Wasm.csproj")
     .WithReference(gateway)
-    .WithEnvironment("BaseAddress", gateway.GetEndpoint("http"))
+    .WithHttpEndpoint(port: 5127, name: "client")
+    .WithEnvironment("BaseAddress", "http://localhost:5101")
     .WaitFor(gateway);
 
 builder.Build().Run();
