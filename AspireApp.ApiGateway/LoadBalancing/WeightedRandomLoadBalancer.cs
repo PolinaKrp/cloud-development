@@ -1,6 +1,11 @@
 using Microsoft.AspNetCore.Http;
-using Yarp.ReverseProxy.LoadBalancing;
-using Yarp.ReverseProxy.Model;
+using Ocelot.LoadBalancer.Interfaces;
+using Ocelot.Responses;
+using Ocelot.Values;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace AspireApp.ApiGateway.LoadBalancing;
 
@@ -8,29 +13,38 @@ namespace AspireApp.ApiGateway.LoadBalancing;
 /// Weighted Random балансировщик нагрузки.
 /// Распределяет запросы между сервисами по заданным весам.
 /// </summary>
-
-public class WeightedRandomLoadBalancer : ILoadBalancingPolicy
+public class WeightedRandomLoadBalancer(List<Service> services) : ILoadBalancer
 {
+    private readonly List<Service> _services = services;
+    private readonly List<int> _weights = services.Select(s => GetWeight(s)).ToList();
     private readonly Random _random = new();
 
-    public string Name => "WeightedRandom";
-
-    public DestinationState? PickDestination(HttpContext context, ClusterState cluster, IReadOnlyList<DestinationState> destinations)
+    private static int GetWeight(Service service)
     {
-        if (destinations.Count == 0)
-            return null;
+        var port = service.HostAndPort.DownstreamPort;
+        return port == 5001 ? 5 : port == 5002 ? 3 : port == 5003 ? 2 : 1;
+    }
 
-        var weightedList = new List<DestinationState>();
-        for (var i = 0; i < destinations.Count; i++)
+    public async Task<Response<ServiceHostAndPort>> LeaseAsync(HttpContext httpContext)
+    {
+        var totalWeight = _weights.Sum();
+        var randomValue = _random.Next(totalWeight);
+
+        var current = 0;
+        for (var i = 0; i < _services.Count; i++)
         {
-            var weight = i == 0 ? 5 : (i == 1 ? 3 : 2);
-            for (var w = 0; w < weight; w++)
+            current += _weights[i];
+            if (randomValue < current)
             {
-                weightedList.Add(destinations[i]);
+                return new OkResponse<ServiceHostAndPort>(_services[i].HostAndPort);
             }
         }
 
-        var index = _random.Next(weightedList.Count);
-        return weightedList[index];
+        return new OkResponse<ServiceHostAndPort>(_services.First().HostAndPort);
     }
+
+    public void Release(ServiceHostAndPort hostAndPort) {}
+
+    public string Name => nameof(WeightedRandomLoadBalancer);
+    public string Type => "WeightedRandom";
 }

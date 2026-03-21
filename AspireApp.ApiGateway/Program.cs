@@ -1,12 +1,13 @@
-using Yarp.ReverseProxy.Configuration;
-using Yarp.ReverseProxy.LoadBalancing;
+using Ocelot.DependencyInjection;
+using Ocelot.Middleware;
+using Ocelot.LoadBalancer.Interfaces;
 using AspireApp.ApiGateway.LoadBalancing;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("AllowClient", policy =>
     {
         policy.WithOrigins("http://localhost:5127")
               .AllowAnyMethod()
@@ -14,36 +15,15 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Регистрация балансировщика
-builder.Services.AddSingleton<ILoadBalancingPolicy, WeightedRandomLoadBalancer>();
+builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
 
-builder.Services.AddReverseProxy()
-    .LoadFromMemory(new[]
-    {
-        new RouteConfig
-        {
-            RouteId = "warehouse-route",
-            ClusterId = "warehouse-cluster",
-            Match = new RouteMatch { Path = "/warehouse" }
-        }
-    }, new[]
-    {
-        new ClusterConfig
-        {
-            ClusterId = "warehouse-cluster",
-            Destinations = new Dictionary<string, DestinationConfig>
-            {
-                { "replica1", new DestinationConfig { Address = "http://localhost:5001" } },
-                { "replica2", new DestinationConfig { Address = "http://localhost:5002" } },
-                { "replica3", new DestinationConfig { Address = "http://localhost:5003" } }
-            },
-            LoadBalancingPolicy = "WeightedRandom"
-        }
-    });
+builder.Services.AddOcelot();
+builder.Services.AddSingleton<ILoadBalancerFactory, WeightedRandomLoadBalancerFactory>();
 
 var app = builder.Build();
 
-app.UseCors();
-app.MapReverseProxy();
+app.UseCors("AllowClient");
+
+await app.UseOcelot();
 
 app.Run();

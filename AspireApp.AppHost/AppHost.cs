@@ -19,7 +19,6 @@ var gateway = builder.AddProject("api-gateway", "../AspireApp.ApiGateway/AspireA
 builder.AddProject("client-wasm", "../Client.Wasm/Client.Wasm.csproj")
     .WithReference(gateway)
     .WithHttpEndpoint(port: 5127, name: "client")
-    .WithEnvironment("BaseAddress", "http://localhost:5101")
     .WaitFor(gateway);
 
 builder.Build().Run();

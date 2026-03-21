@@ -10,10 +10,15 @@
       ],
       "UpstreamPathTemplate": "/warehouse",
       "UpstreamHttpMethod": [ "GET" ],
-      "LoadBalancer": "WeightedRandom",
+      "LoadBalancerOptions": {
+        "Type": "WeightedRandom"
+      },
       "HttpHandlerOptions": {
         "UseTracing": true
       }
     }
-  ]
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "http://localhost:5101"
+  }
 }
