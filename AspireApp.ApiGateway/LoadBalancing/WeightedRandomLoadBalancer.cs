@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Http;
+using Ocelot.Errors;
 using Ocelot.Responses;
 using Ocelot.Values;
 using Ocelot.LoadBalancer.Interfaces;
-using Ocelot.LoadBalancer.Errors;
+using Microsoft.Extensions.Configuration;
 
 namespace AspireApp.ApiGateway.LoadBalancing;
 
@@ -10,17 +11,26 @@ namespace AspireApp.ApiGateway.LoadBalancing;
 /// Weighted Random балансировщик нагрузки.
 /// Распределяет запросы между сервисами по заданным весам.
 /// </summary>
-public class WeightedRandomLoadBalancer(List<Service> services) : ILoadBalancer
+public class WeightedRandomLoadBalancer : ILoadBalancer
 {
-    private readonly List<Service> _services = services;
-    private readonly List<int> _weights = services.Select(GetWeight).ToList();
-    private readonly int _totalWeight = services.Sum(GetWeight);
+    private readonly List<Service> _services;
+    private readonly List<int> _weights;
+    private readonly int _totalWeight;
     private static readonly Random _random = Random.Shared;
+    private readonly IConfiguration _configuration;
 
-    private static int GetWeight(Service service)
+    public WeightedRandomLoadBalancer(List<Service> services, IConfiguration configuration)
     {
-        var port = service.HostAndPort.DownstreamPort;
-        return port == 5001 ? 5 : port == 5002 ? 3 : port == 5003 ? 2 : 1;
+        _services = services;
+        _configuration = configuration;
+        _weights = services.Select(s => GetWeight(s)).ToList();
+        _totalWeight = _weights.Sum();
+    }
+
+    private int GetWeight(Service service)
+    {
+        var port = service.HostAndPort.DownstreamPort.ToString();
+        return _configuration.GetValue<int>($"Weights:{port}", 1);
     }
 
     public async Task<Response<ServiceHostAndPort>> LeaseAsync(HttpContext httpContext)
@@ -47,4 +57,10 @@ public class WeightedRandomLoadBalancer(List<Service> services) : ILoadBalancer
 
     public string Name => nameof(WeightedRandomLoadBalancer);
     public string Type => "WeightedRandom";
+}
+
+public class ServicesAreEmptyError : Error
+{
+    public ServicesAreEmptyError(string message)
+        : base(message, OcelotErrorCode.ServicesAreEmptyError, 503) { }
 }
