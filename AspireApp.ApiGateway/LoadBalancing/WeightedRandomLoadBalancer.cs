@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using Ocelot.Errors;
 using Ocelot.Responses;
 using Ocelot.Values;
@@ -54,13 +53,5 @@ public class WeightedRandomLoadBalancer : ILoadBalancer
     }
 
     public void Release(ServiceHostAndPort hostAndPort) { }
-
-    public string Name => nameof(WeightedRandomLoadBalancer);
     public string Type => "WeightedRandom";
-}
-
-public class ServicesAreEmptyError : Error
-{
-    public ServicesAreEmptyError(string message)
-        : base(message, OcelotErrorCode.ServicesAreEmptyError, 503) { }
 }
