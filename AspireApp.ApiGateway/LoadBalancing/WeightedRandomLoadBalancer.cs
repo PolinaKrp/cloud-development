@@ -2,7 +2,6 @@ using Ocelot.Errors;
 using Ocelot.Responses;
 using Ocelot.Values;
 using Ocelot.LoadBalancer.Interfaces;
-using Microsoft.Extensions.Configuration;
 
 namespace AspireApp.ApiGateway.LoadBalancing;
 
